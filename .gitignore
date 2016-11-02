@@ -1,0 +1,4 @@
+*.pprof
+callgrind.*
+before.txt
+after.txt

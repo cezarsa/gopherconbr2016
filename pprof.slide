@@ -1,0 +1,117 @@
+Benchmarks e Profiling
+Tags: golang, pprof, benchmark, profiling
+
+Cezar Sá Espinola
+@tsurupaas
+http://github.com/cezarsa
+cezarsa@gmail.com
+
+* How?
+
+The not so hard way.
+
+*runtime/pprof*
+
+* Code
+
+.html demostyle.html
+.play demo1/demo1.go /^func sineCircle/,/^}/
+
+* Enabling pprof
+
+.code demo2/demo2.go /^func main/,/^}/
+
+* Demo
+
+  $ go build
+
+  $ ./demo2
+
+  $ go tool pprof ./demo2 cpu.pprof
+  Entering interactive mode (type "help" for commands)
+  (pprof) top
+  3360ms of 3360ms total (  100%)
+        flat  flat%   sum%        cum   cum%
+      3260ms 97.02% 97.02%     3260ms 97.02%  syscall.Syscall
+       100ms  2.98%   100%     3360ms   100%  main.sineCircle
+           0     0%   100%     3360ms   100%  main.main
+           0     0%   100%     3260ms 97.02%  os.(*File).Write
+           0     0%   100%     3260ms 97.02%  os.(*File).write
+
+Your best friends:
+
+- top
+- peek
+- list
+
+* Better visualization?
+
+Web
+
+  $ go tool pprof -web ./demo2 cpu.pprof
+
+Callgrind
+
+  $ go tool pprof -callgrind ./demo2 cpu.pprof > callgrind.cpu
+  $ qcachegrind callgrind.cpu
+
+* With benchmarks
+
+.code demo3/demo3_test.go /^func Benchmark/,/^}/
+
+  $ go test -bench . -benchmem -cpuprofile cpu.pprof
+  BenchmarkSineCircle-4   	   50000	     27437 ns/op	    6120 B/op	     765 allocs/op
+  PASS
+
+* Analysing
+
+Something weird?
+
+Maybe io.Discard isn't the right choice here, let's try something different.
+
+.code demo4/demo4_test.go /^func Benchmark/,/^}/
+
+  $ go test -bench . -benchmem -cpuprofile cpu.pprof
+  BenchmarkSineCircle-4   	    3000	    441941 ns/op	   48960 B/op	    2295 allocs/op
+  PASS
+
+* Analysing (again)
+
+  Entering interactive mode (type "help" for commands)
+  (pprof) top
+  1.23s of 1.23s total (  100%)
+  Showing top 10 nodes out of 31 (cum >= 1.21s)
+        flat  flat%   sum%        cum   cum%
+       1.20s 97.56% 97.56%      1.20s 97.56%  syscall.Syscall
+       0.01s  0.81% 98.37%      0.01s  0.81%  runtime.heapBitsSetType
+       0.01s  0.81% 99.19%      0.01s  0.81%  runtime.mach_semaphore_signal
+       0.01s  0.81%   100%      0.01s  0.81%  runtime.mach_semaphore_wait
+           0     0%   100%      1.21s 98.37%  _/Users/cezarsa/code/gophercon/demo4.BenchmarkSineCircle
+           0     0%   100%      1.21s 98.37%  _/Users/cezarsa/code/gophercon/demo4.sineCircle
+
+Now it looks more like our first profile run.
+
+* Improving based on benchmarks
+
+.html demostyle.html
+.play demo5/demo5.go /^func sineCircle/,/^}/
+
+* Comparing benchmarks
+
+  $ go get golang.org/x/tools/cmd/benchcmp
+
+  // ./demo4
+  $ go test -bench . -benchmem -cpuprofile cpu.pprof > ../before.txt
+
+  // ./demo5
+  $ go test -bench . -benchmem -cpuprofile cpu.pprof > ../after.txt
+
+  $ benchcmp before.txt after.txt
+  benchmark                 old ns/op     new ns/op     delta
+  BenchmarkSineCircle-4     440956        31599         -92.83%
+
+  benchmark                 old allocs     new allocs     delta
+  BenchmarkSineCircle-4     2295           768            -66.54%
+
+  benchmark                 old bytes     new bytes     delta
+  BenchmarkSineCircle-4     48960         10272         -79.02%
