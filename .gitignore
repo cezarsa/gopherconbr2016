@@ -1,4 +1,5 @@
 *.pprof
+*.test
 callgrind.*
 before.txt
 after.txt
