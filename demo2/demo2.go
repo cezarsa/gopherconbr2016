@@ -29,9 +29,9 @@ func sineCircle(w io.Writer, r int) {
 
 func main() {
 	out, _ := os.Create("cpu.pprof")
-	pprof.StartCPUProfile(out)
+	pprof.StartCPUProfile(out) // HL
 	defer out.Close()
-	defer pprof.StopCPUProfile()
+	defer pprof.StopCPUProfile() // HL
 
 	for i := 0; i < 5000; i++ { // Arbitrary large number of iterations
 		sineCircle(os.Stdout, 10)

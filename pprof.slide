@@ -6,12 +6,6 @@ Cezar Sá Espinola
 http://github.com/cezarsa
 cezarsa@gmail.com
 
-* How?
-
-The not so hard way.
-
-*runtime/pprof*
-
 * Code
 
 .html demostyle.html
@@ -166,7 +160,8 @@ Now it looks more like our first profile run.
 
 .code demo6/demo6_test.go /^func BenchmarkSineCircle/,/^}/
 
-.code demo6/demo6.go /^func sineCircle/,/\s+for/
+.html demostyle.html
+.play demo6/demo6.go /^func sineCircle/,/\s+for/
 
 : demo6
 
@@ -333,4 +328,21 @@ cpu profile not very useful in this case
   benchmark                  old bytes     new bytes     delta
   BenchmarkEncodePrint-4     2107          32            -98.48%
 
-* Bonus net/http/pprof
+Huge gain, usually:
+
+- Less allocations == More performance
+- Prioritize reducing number of allocations instead of size of allocations for performance
+
+* Bonus: net/http/pprof
+
+.code demo11/demo11.go /import/,/^\)/
+.play -edit demo11/demo11.go /func main/,/^}/
+
+  $ wrk -d 1m -c 100 http://localhost:10101
+  $ go tool pprof http://localhost:10101/debug/pprof/profile
+
+* Bonus: flamegraphs
+
+  $ docker run uber/go-torch -u http://localhost:10101 -p > out.svg
+
+.link demo11/out.svg
